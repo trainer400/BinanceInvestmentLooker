@@ -1,25 +1,26 @@
-from coinbase_interface import *
+from binance_interface import *
 from configuration_reader import *
 from logger import *
 import datetime as dt
 import time
+import json
 
 SIMULATION_DAYS = 365
-COIN_NAME = "BTC-EUR"
+COIN_NAME = "PEPEUSDT"
 KEY_FILE_NAME = "key.json"
 
 
 class LoggedData(LoggableObject):
     timestamp = 0
     unix_date = 0
-    price = 0.0
+    current_price = 0.0
 
 
-def gather_data(client: RESTClient, coin_name: str, starting_timestamp: int):
-    # A max of 300 samples can be requested
+def gather_data(client: Spot, coin_name: str, starting_timestamp: int):
+    # A max of 1000 samples can be requested
     current_time = starting_timestamp
-    delta_seconds = 300 * 60
-    iterations = int(SIMULATION_DAYS * 24.0 * 60.0 / 300.0)
+    delta_seconds = 1000 * 60
+    iterations = int(SIMULATION_DAYS * 24.0 * 60.0 / 1000.0)
 
     data_collection_ts = []
     data_collection_dates = []
@@ -31,16 +32,16 @@ def gather_data(client: RESTClient, coin_name: str, starting_timestamp: int):
             print(
                 f"[INFO] Data gathering: {(100.0 * counter / iterations):.2f}%")
             # Retrieve the data candles
-            data = client.get_candles(
-                coin_name, current_time - (iterations - counter) * delta_seconds, current_time - (iterations - counter - 1) * delta_seconds, "ONE_MINUTE")
+            data = client.klines(coin_name, "1m", startTime=(
+                current_time - (iterations - counter) * delta_seconds) * 1000, limit=1000)
 
             # Pack them from top to bottom (the candles are sorted such that the most recent time is the first element)
-            for i in range(len(data["candles"])):
-                candle = data["candles"][len(data["candles"]) - 1 - i]
-                data_collection_ts.append(int(candle["start"]))
+            for i in range(len(data)):
+                candle = data[i]
+                data_collection_ts.append(candle[0] // 1000)
                 data_collection_dates.append(
-                    dt.datetime.fromtimestamp(int(candle["start"])))
-                data_collection_price.append(float(candle["open"]))
+                    dt.datetime.fromtimestamp(candle[0] // 1000))
+                data_collection_price.append(candle[1])
 
             counter += 1
         except Exception as e:
@@ -51,9 +52,13 @@ def gather_data(client: RESTClient, coin_name: str, starting_timestamp: int):
 
 
 def main():
+    # Load the key
+    with open(get_absolute_path("../" + KEY_FILE_NAME), 'rb') as key_file:
+        key = key_file.read()
+    key = json.loads(key)
+
     # Setup the API client
-    client = RESTClient(key_file=get_absolute_path(
-        "../" + KEY_FILE_NAME))
+    client = Spot(api_key=key["APIKey"], private_key=key["privateKey"])
 
     # Set the starting timestamp as the current one
     starting_timestamp = get_server_timestamp(client)
@@ -69,7 +74,7 @@ def main():
         data = LoggedData()
         data.timestamp = data_ts[i]
         data.unix_date = data_dates[i]
-        data.price = data_prices[i]
+        data.current_price = data_prices[i]
 
         # Log the data into the file
         log_data(get_absolute_path("../history.csv"), data)

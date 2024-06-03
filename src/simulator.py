@@ -1,15 +1,14 @@
 from configuration_reader import *
 from investment_strategy import *
-from coinbase_interface import *
 import matplotlib.pyplot as plt
 import datetime as dt
 import time
 
 INITIAL_INVESTMENT = 100
-LOG_FILE = "../logs/ETC-USD-1YR.csv"
-COIN_NAME = "ETC-USDC"
-CURRENCY_NAME = "ETC"
-BASE_CURRENCY_NAME = "USDC"
+LOG_FILE = "../execution_logs/history.csv"
+COIN_NAME = "PEPEUSDT"
+CURRENCY_NAME = "PEPE"
+BASE_CURRENCY_NAME = "USDT"
 AVG_HRS = 20
 MIN_GAIN = 1.5
 BUY_TAX = 0.1
@@ -18,7 +17,7 @@ MIN_DELTA = 3
 STOP_LOSS = 50
 SLEEP_DAYS_AFTER_LOSS = 30
 MAX_INVESTMENT = 300
-LEVER = 4
+LEVER = 1
 
 
 def read_log_file(path: str) -> tuple[list, list]:
@@ -40,7 +39,7 @@ def read_log_file(path: str) -> tuple[list, list]:
     data_unix = []
     for row in reader:
         data_ts.append(int(row["timestamp"]))
-        data_price.append(float(row["price"]))
+        data_price.append(float(row["current_price"]))
         data_unix.append(dt.datetime.fromtimestamp(int(row["timestamp"])))
 
     file.close()
