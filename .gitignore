@@ -1,0 +1,7 @@
+*.inv
+__pycache__
+*.json
+*.log
+*.ev
+history.csv
+*.state
