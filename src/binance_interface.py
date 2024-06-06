@@ -15,6 +15,18 @@ def truncate(num: float, decimals: int) -> float:
     return float(result) / pow(10, decimals)
 
 
+def get_increment_from_string(increment: str):
+    number = float(increment)
+
+    # The counter is incremented every time we need to remove a 0
+    counter = 0
+    while number != 1:
+        number *= 10
+        counter += 1
+
+    return counter
+
+
 def get_current_price(client: Spot, coin_name: str):
     data = client.ticker_price(coin_name)
     return truncate(float(data["price"]), 8)
@@ -55,3 +67,41 @@ def get_avg_price(client: Spot, coin_name: str, avg_hrs: int, starting_timestamp
     result = result / len(data)
 
     return truncate(result, 8)
+
+
+def sell_coin(client: Spot, coin_name: str, amount: float) -> tuple:
+    # Get the maximum precision that the API accepts for the coin
+    filters = client.exchange_info(symbol=coin_name)["symbols"][0]["filters"]
+    increment = 1
+
+    # Look for the minimum increment
+    for filter in filters:
+        if filter["filterType"] == "LOT_SIZE":
+            increment = get_increment_from_string(filter["stepSize"])
+            break
+
+    # Process the amount to truncate instead of approximate of the desired increment
+    amount = truncate(amount, increment)
+
+    # Get the order timestamp
+    timestamp = get_server_timestamp(client)
+
+    # Make the order (using formatted amount to avoid scientific notation)
+    result = client.new_order(symbol=coin_name, side="SELL",
+                              type="MARKET", quantity=f"{amount:.8f}", timestamp=timestamp)
+
+    return (result["status"] == "FILLED", str(result))
+
+
+def buy_coin(client: Spot, coin_name: str, amount: float) -> tuple:
+    # Process the amount to truncate instead of approximate
+    amount = truncate(amount, 2)
+
+    # Get the order timestamp
+    timestamp = get_server_timestamp(client)
+
+    # Make the order
+    result = client.new_order(symbol=coin_name, side="BUY", type="MARKET",
+                              quoteOrderQty=amount, timestamp=timestamp)
+
+    return (result["status"] == "FILLED", str(result))
