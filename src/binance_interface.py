@@ -88,7 +88,7 @@ def sell_coin(client: Spot, coin_name: str, amount: float) -> tuple:
 
     # Make the order (using formatted amount to avoid scientific notation)
     result = client.new_order(symbol=coin_name, side="SELL",
-                              type="MARKET", quantity=f"{amount:.8f}", timestamp=timestamp)
+                              type="MARKET", quantity="{:.{prec}f}".format(amount, prec=increment), timestamp=timestamp)
 
     return (result["status"] == "FILLED", str(result))
 
