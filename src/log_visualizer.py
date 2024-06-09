@@ -4,8 +4,9 @@ import datetime as dt
 import csv
 import os
 
-LOG_FILE = "../execution_logs/ETC.log"
-DELTA_BUY = 1.2
+LOG_FILE = "../execution_logs/PEPE.log"
+DELTA_BUY = 3.2
+MIN_GAIN = 3
 
 
 def read_log_file(path: str) -> tuple[list, list, list, list]:
@@ -27,22 +28,24 @@ def read_log_file(path: str) -> tuple[list, list, list, list]:
     data_avg = []
     data_unix = []
     data_action = []
+    data_last_buy = []
     for row in reader:
         data_ts.append(int(row["timestamp"]))
         data_price.append(float(row["current_price"]))
         data_avg.append(float(row["considered_avg"]))
         data_unix.append(dt.datetime.fromtimestamp(int(row["timestamp"])))
         data_action.append(row["last_action"])
+        data_last_buy.append(float(row["last_buy_price"]))
 
     file.close()
-    return (data_ts, data_unix, data_price, data_avg, data_action)
+    return (data_ts, data_unix, data_price, data_avg, data_action, data_last_buy)
 
 
 def main():
     fig, ax = plt.subplots()
 
     (data_ts, data_unix, data_price, data_avg,
-     data_action) = read_log_file(LOG_FILE)
+     data_action, data_last_buy) = read_log_file(LOG_FILE)
 
     ax.plot(data_unix, data_price)
     ax.plot(data_unix, data_avg, color="yellow")
@@ -60,7 +63,16 @@ def main():
     for i in range(len(data_avg)):
         data_buy_thr.append(data_avg[i] - data_avg[i] * DELTA_BUY / 100.0)
 
+    # Generate the threshold over which the invester sells
+    data_sell_thr = []
+    data_sell_thr_timestamp = []
+    for i in range(len(data_last_buy)):
+        if data_last_buy[i] != 0:
+            data_sell_thr.append(data_last_buy[i] * ((MIN_GAIN / 100.0) + 1))
+            data_sell_thr_timestamp.append(data_unix[i])
+
     ax.plot(data_unix, data_buy_thr, color="red")
+    ax.plot(data_sell_thr_timestamp, data_sell_thr, color="green")
 
     plt.show()
 
