@@ -66,7 +66,7 @@ def get_avg_price(client: Spot, coin_name: str, avg_hrs: int, starting_timestamp
     # Average the final result
     result = result / len(data)
 
-    return truncate(result, 8)
+    return truncate(result, 9)
 
 
 def sell_coin(client: Spot, coin_name: str, amount: float) -> tuple:
