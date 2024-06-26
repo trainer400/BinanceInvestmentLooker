@@ -5,18 +5,18 @@ import datetime as dt
 import time
 
 INITIAL_INVESTMENT = 100
-LOG_FILE = "../execution_logs/history.csv"
+LOG_FILE = "../execution_logs/PEPE-5M.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"
-AVG_HRS = 20
-MIN_GAIN = 1.5
+AVG_HRS = 15
+MIN_GAIN = 3
 BUY_TAX = 0.1
 SELL_TAX = 0.1
-MIN_DELTA = 3
+MIN_DELTA = 3.5
 STOP_LOSS = 50
 SLEEP_DAYS_AFTER_LOSS = 30
-MAX_INVESTMENT = 300
+MAX_INVESTMENT = 10000
 LEVER = 1
 
 
@@ -103,6 +103,10 @@ def main():
     # Accumulate average data
     avg_price = []
     avg_time = []
+    avg_thr = []
+
+    # Sell thr
+    sell_thr = []
 
     # Lever debit if present
     lever_debit = 0
@@ -124,6 +128,10 @@ def main():
         # Populate the average samples
         avg_price.append(state.considered_avg)
         avg_time.append(dt.datetime.fromtimestamp(state.timestamp))
+        avg_thr.append(state.considered_avg *
+                       (1 - (MIN_DELTA + BUY_TAX + SELL_TAX) / 100.0))
+
+        sell_thr.append(state.last_buy_price * (1 + MIN_GAIN / 100.0))
 
         # Make the strategic decision
         decision = make_decision(state, config)
@@ -166,6 +174,8 @@ def main():
 
     # Plot also the average considered price
     ax.plot(avg_time, avg_price, color="yellow")
+    ax.plot(avg_time, avg_thr, color="red")
+    ax.plot(avg_time, sell_thr, color="green")
     plt.show()
 
 
