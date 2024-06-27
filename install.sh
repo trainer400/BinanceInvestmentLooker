@@ -24,6 +24,7 @@ fi
 # Stop previous services
 echo -e "[${GREEN}Info${NC}] Stopping identical services (if present)"
 sudo systemctl stop binance.service
+sudo systemctl disable binance.service
 
 # Install python
 echo -e "[${GREEN}Info${NC}] Installing Python3"
@@ -65,5 +66,5 @@ echo -e "[Unit]\nDescription=BinanceAutomaticInvester\nAfter=network.target\n[Se
 
 # Final instructions
 echo -e "[${GREEN}Info${NC}] Success!"
-echo "---------------------------------------------------------------------------"
-echo -e "\nTo run the service for the first time please type:\nsudo systemctl start binance.service && sudo systemctl enable binance.service"
+echo -e "---------------------------------------------------------------------------"
+echo -e "\nTo run the service for the first time please type:\n\nsudo systemctl start binance.service && sudo systemctl enable binance.service"

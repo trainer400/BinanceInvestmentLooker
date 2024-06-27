@@ -5,4 +5,4 @@ __pycache__
 *.ev
 *.csv
 *.state
-*.sh
+run.sh
