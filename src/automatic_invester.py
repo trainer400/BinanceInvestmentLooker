@@ -1,7 +1,6 @@
 from configuration_reader import *
 from binance_interface import *
 from investment_strategy import *
-from coinbase.rest import RESTClient
 import datetime as dt
 import time
 import pickle
@@ -44,7 +43,7 @@ def save_internal_state(config: UserConfiguration, state: InternalState):
     log.close()
 
 
-def compute_base_coin_availability(client: RESTClient, config: UserConfiguration, configs, states):
+def compute_base_coin_availability(client, config: UserConfiguration, configs, states):
     # In case the last operation is a BUY, the base coin for this instance is 0
     if states[config.LOG_NAME].last_action == Action.BUY:
         return 0
@@ -64,7 +63,7 @@ def compute_base_coin_availability(client: RESTClient, config: UserConfiguration
     return truncate(base_currency / counter, 2)
 
 
-def compute_coin_availability(client: RESTClient, config: UserConfiguration, configs, states):
+def compute_coin_availability(client, config: UserConfiguration, configs, states):
     # In case the last operation is a SELL / SELL_LOSS or NONE, the coin for this instance is 0
     if states[config.LOG_NAME].last_action == Action.SELL or \
         states[config.LOG_NAME].last_action == Action.SELL_LOSS or \
@@ -192,7 +191,7 @@ def main():
                     f"[{state.timestamp}][{dt.datetime.fromtimestamp(state.timestamp)}][ERR] Caught unhandled exception during the process: {str(e)}")
 
         # Sleep until next update
-        time.sleep(60)
+        time.sleep(10)
 
 
 if __name__ == "__main__":
