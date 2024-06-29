@@ -3,10 +3,7 @@ import matplotlib.pyplot as plt
 import datetime as dt
 import csv
 import os
-
-LOG_FILE = "../execution_logs/PEPE.log"
-DELTA_BUY = 3.2
-MIN_GAIN = 3
+import argparse
 
 
 def read_log_file(path: str) -> tuple[list, list, list, list]:
@@ -42,6 +39,21 @@ def read_log_file(path: str) -> tuple[list, list, list, list]:
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="A program that allows you to visualize the logs that the bot saved during its operations")
+    parser.add_argument("-l", "--log", help="log file", required=True)
+    parser.add_argument(
+        "-d", "--delta", default=3, help="configuration of the amount (in percentage) that indicates how much the price must be lower than the average before the bot orders a BUY action (Default: 3)")
+    parser.add_argument(
+        "-g", "--gain", default=3, help="configuration of the amount (in percentage) that indicates how much the price must go higher than the BUY one before the bot orders a SELL action (Default: 3)")
+
+    # Parse the input data from user
+    args = parser.parse_args()
+
+    LOG_FILE = args.log
+    DELTA_BUY = float(args.delta)
+    MIN_GAIN = float(args.gain)
+
     fig, ax = plt.subplots()
 
     (data_ts, data_unix, data_price, data_avg,
