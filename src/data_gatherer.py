@@ -4,10 +4,7 @@ from logger import *
 import datetime as dt
 import time
 import json
-
-SIMULATION_DAYS = 365
-COIN_NAME = "PEPEUSDT"
-KEY_FILE_NAME = "key.json"
+import argparse
 
 
 class LoggedData(LoggableObject):
@@ -16,11 +13,11 @@ class LoggedData(LoggableObject):
     current_price = 0.0
 
 
-def gather_data(client: Spot, coin_name: str, starting_timestamp: int):
+def gather_data(client: Spot, coin_name: str, starting_timestamp: int, simulation_days: int):
     # A max of 1000 samples can be requested
     current_time = starting_timestamp
     delta_seconds = 1000 * 60
-    iterations = int(SIMULATION_DAYS * 24.0 * 60.0 / 1000.0)
+    iterations = int(simulation_days * 24.0 * 60.0 / 1000.0)
 
     data_collection_ts = []
     data_collection_dates = []
@@ -52,6 +49,21 @@ def gather_data(client: Spot, coin_name: str, starting_timestamp: int):
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        description="A program that allows you to download the logs from binance to perform accurate simulations")
+
+    parser.add_argument(
+        "-c", "--coin", help="the Binance coin name (E.g. BTCUSDT)", required=True)
+    parser.add_argument(
+        "-d", "--days", default=30, help="how many days the program must download (Default: 30)")
+
+    # Parse the input data from user
+    args = parser.parse_args()
+
+    SIMULATION_DAYS = int(args.days)
+    COIN_NAME = args.coin
+    KEY_FILE_NAME = "key.json"
+
     # Load the key
     with open(get_absolute_path("../" + KEY_FILE_NAME), 'rb') as key_file:
         key = key_file.read()
@@ -65,7 +77,7 @@ def main():
 
     # Gather the data from the server
     (data_ts, data_dates, data_prices) = gather_data(
-        client, COIN_NAME, starting_timestamp)
+        client, COIN_NAME, starting_timestamp, SIMULATION_DAYS)
 
     # Save the data into file
     for i in range(len(data_ts)):
@@ -77,7 +89,8 @@ def main():
         data.current_price = data_prices[i]
 
         # Log the data into the file
-        log_data(get_absolute_path("../history.csv"), data)
+        log_data(get_absolute_path("../" + COIN_NAME +
+                 "-" + str(SIMULATION_DAYS) + ".csv"), data)
 
 
 if __name__ == "__main__":
