@@ -1,4 +1,21 @@
+from binance_interface import *
 from simulator import *
+import decimal
+
+LOG_FILE = "../execution_logs/PEPE-5M.csv"
+COIN_NAME = "PEPEUSDT"
+CURRENCY_NAME = "PEPE"
+BASE_CURRENCY_NAME = "USDT"
+BUY_TAX = 0.1
+SELL_TAX = 0.1
+STOP_LOSS = 50
+SLEEP_DAYS_AFTER_LOSS = 30
+
+
+def drange(x, y, jump):
+    while x < y:
+        yield truncate(float(x), get_increment_from_string(jump))
+        x += float(decimal.Decimal(jump))
 
 
 def read_log_file(path: str) -> tuple[list, list]:
@@ -27,21 +44,79 @@ def read_log_file(path: str) -> tuple[list, list]:
     return (data_ts, data_unix, data_price)
 
 
+def evaluate_simulation(config: UserConfiguration, simulation_data: list):
+    # Use 100% of initial investment
+    initial_investment = 100
+
+    # Evaluate the final gain
+    base_coin = initial_investment
+    active_coin = 0
+    for data in simulation_data:
+        if (data.action == Action.BUY):
+            # state.current_coin_availability = (investment -
+            #    (config.BUY_TAX / 100.0) * investment) / state.current_price
+            active_coin = (base_coin - (config.BUY_TAX / 100.0)
+                           * base_coin) / data.price
+            base_coin = 0
+        elif (data.action == Action.SELL or data.action == Action.SELL_LOSS):
+            # value = state.current_coin_availability * state.current_price
+            # state.current_base_coin_availability += value - \
+            #     (config.SELL_TAX / 100.0) * value
+            value = active_coin * data.price
+            base_coin = value - (config.SELL_TAX / 100.0) * value
+    # In case at the end there is only a sell action, sell the remaining amount
+    if (base_coin == 0):
+        base_coin = active_coin * \
+            simulation_data[len(simulation_data) - 1].price
+
+    return base_coin
+
+
 def main():
+    AVG_HRS_MIN = 1
+    AVG_HRS_MAX = 15
+    AVG_HRS_STEP = 1
+
+    # TODO drange spins off in a loop if the step is not multiple of 1 (other digits than 1)
+    MIN_GAIN_MIN = 0.3
+    MIN_GAIN_MAX = 5
+    MIN_GAIN_STEP = 0.1
+
+    MIN_DELTA_MIN = 0
+    MIN_DELTA_MAX = 5
+    MIN_DELTA_STEP = 0.1
+
     # Create user configuration
     config = UserConfiguration()
-    config.AVG_HRS = AVG_HRS
+    config.AVG_HRS = 1
     config.COIN_NAME = COIN_NAME
     config.CURRENCY_NAME = CURRENCY_NAME
     config.BASE_CURRENCY_NAME = BASE_CURRENCY_NAME
-    config.MIN_GAIN = MIN_GAIN
+    config.MIN_GAIN = 3
     config.BUY_TAX = BUY_TAX
     config.SELL_TAX = SELL_TAX
-    config.MIN_DELTA = MIN_DELTA
+    config.MIN_DELTA = 3.5
     config.STOP_LOSS = STOP_LOSS
     config.SLEEP_DAYS_AFTER_LOSS = SLEEP_DAYS_AFTER_LOSS
 
-    print(simulate(config))
+    # Read the log file
+    (data_ts, data_unix, data_price) = read_log_file(LOG_FILE)
+
+    for avg_hrs in range(AVG_HRS_MIN, AVG_HRS_MAX, AVG_HRS_STEP):
+        for min_gain in list(drange(MIN_GAIN_MIN, MIN_GAIN_MAX, str(MIN_GAIN_STEP))):
+            for min_delta in list(drange(MIN_DELTA_MIN, MIN_DELTA_MAX, str(MIN_DELTA_STEP))):
+                print(
+                    f"Configuration: {avg_hrs} (AVG_HRS), {min_gain} (MIN_GAIN), {min_delta}  (MIN_DELTA)")
+
+                # Set the config
+                config.AVG_HRS = AVG_HRS_MIN
+                config.MIN_GAIN = MIN_GAIN_MIN
+                config.MIN_DELTA = MIN_DELTA_MIN
+
+                simulation_data = simulate(config, data_ts, data_price)
+                score = evaluate_simulation(config, simulation_data)
+
+                print(f"Score: {score}")
 
 
 if __name__ == "__main__":
