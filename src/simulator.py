@@ -5,11 +5,11 @@ import datetime as dt
 import time
 
 INITIAL_INVESTMENT = 100
-LOG_FILE = "../execution_logs/PEPE-5M.csv"
+LOG_FILE = "../execution_logs/PEPEUSDT-150.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"
-AVG_HRS = 15
+AVG_HRS = 1
 MIN_GAIN = 3
 BUY_TAX = 0.1
 SELL_TAX = 0.1
@@ -17,7 +17,6 @@ MIN_DELTA = 3.5
 STOP_LOSS = 50
 SLEEP_DAYS_AFTER_LOSS = 30
 MAX_INVESTMENT = 10000
-LEVER = 1
 
 
 def read_log_file(path: str) -> tuple[list, list]:
@@ -73,7 +72,7 @@ def main():
     config.BUY_TAX = BUY_TAX
     config.SELL_TAX = SELL_TAX
     config.MIN_DELTA = MIN_DELTA
-    config.STOP_LOSS = STOP_LOSS / LEVER
+    config.STOP_LOSS = STOP_LOSS
     config.SLEEP_DAYS_AFTER_LOSS = SLEEP_DAYS_AFTER_LOSS
 
     # Create an internal state to use during the simulation
@@ -108,9 +107,6 @@ def main():
     # Sell thr
     sell_thr = []
 
-    # Lever debit if present
-    lever_debit = 0
-
     # Run the simulator
     for i in range(starting_index, len(data_ts)):
         # print(
@@ -142,10 +138,6 @@ def main():
                 state.current_base_coin_availability, MAX_INVESTMENT)
             state.current_base_coin_availability -= investment
 
-            # Adjust the investment depending on the LEVER
-            investment = investment * LEVER
-            lever_debit = (1 - 1.0/LEVER) * investment
-
             state.last_buy_price = state.current_price
             state.current_coin_availability = (investment -
                                                (BUY_TAX / 100.0) * investment) / state.current_price
@@ -163,7 +155,6 @@ def main():
             state.current_base_coin_availability += state.current_coin_availability * state.current_price - \
                 (config.SELL_TAX / 100.0) * \
                 state.current_coin_availability * state.current_price
-            state.current_base_coin_availability -= lever_debit
             state.current_coin_availability = 0
             state.last_action_ts = state.timestamp
             ax.axvline(data_date[i], color="g", label="SELL")
