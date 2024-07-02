@@ -32,6 +32,7 @@ def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_ti
 
 
 def simulate(config: UserConfiguration, data_ts, data_price) -> list:
+
     simulation_result = []
 
     # Create an internal state to use during the simulation
@@ -68,12 +69,13 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
         # Update the internal state
         if decision == Action.BUY:
             investment = state.current_base_coin_availability
-            state.current_base_coin_availability -= investment
+            state.last_action = decision
 
             state.last_buy_price = state.current_price
             state.current_coin_availability = (investment -
                                                (config.BUY_TAX / 100.0) * investment) / state.current_price
-            state.last_action = decision
+
+            state.current_base_coin_availability = 0
             state.last_action_ts = state.timestamp
 
             # Register the simulation step

@@ -53,17 +53,15 @@ def evaluate_simulation(config: UserConfiguration, simulation_data: list):
     active_coin = 0
     for data in simulation_data:
         if (data.action == Action.BUY):
-            # state.current_coin_availability = (investment -
-            #    (config.BUY_TAX / 100.0) * investment) / state.current_price
             active_coin = (base_coin - (config.BUY_TAX / 100.0)
                            * base_coin) / data.price
             base_coin = 0
+
         elif (data.action == Action.SELL or data.action == Action.SELL_LOSS):
-            # value = state.current_coin_availability * state.current_price
-            # state.current_base_coin_availability += value - \
-            #     (config.SELL_TAX / 100.0) * value
             value = active_coin * data.price
             base_coin = value - (config.SELL_TAX / 100.0) * value
+            active_coin = 0
+
     # In case at the end there is only a sell action, sell the remaining amount
     if (base_coin == 0):
         base_coin = active_coin * \
@@ -109,9 +107,9 @@ def main():
                     f"Configuration: {avg_hrs} (AVG_HRS), {min_gain} (MIN_GAIN), {min_delta}  (MIN_DELTA)")
 
                 # Set the config
-                config.AVG_HRS = AVG_HRS_MIN
-                config.MIN_GAIN = MIN_GAIN_MIN
-                config.MIN_DELTA = MIN_DELTA_MIN
+                config.AVG_HRS = int(avg_hrs)
+                config.MIN_GAIN = float(min_gain)
+                config.MIN_DELTA = float(min_delta)
 
                 simulation_data = simulate(config, data_ts, data_price)
                 score = evaluate_simulation(config, simulation_data)
