@@ -1,8 +1,9 @@
 from binance_interface import *
 from simulator import *
 import decimal
+import copy
 
-LOG_FILE = "../execution_logs/PEPE-5M.csv"
+LOG_FILE = "../execution_logs/PEPE-3M.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"
@@ -100,6 +101,10 @@ def main():
     # Read the log file
     (data_ts, data_unix, data_price) = read_log_file(LOG_FILE)
 
+    # Best config
+    best_config = config
+    best_score = 0
+
     for avg_hrs in range(AVG_HRS_MIN, AVG_HRS_MAX, AVG_HRS_STEP):
         for min_gain in list(drange(MIN_GAIN_MIN, MIN_GAIN_MAX, str(MIN_GAIN_STEP))):
             for min_delta in list(drange(MIN_DELTA_MIN, MIN_DELTA_MAX, str(MIN_DELTA_STEP))):
@@ -114,7 +119,13 @@ def main():
                 simulation_data = simulate(config, data_ts, data_price)
                 score = evaluate_simulation(config, simulation_data)
 
+                if score > best_score:
+                    best_score = score
+                    best_config = copy.deepcopy(config)
+
                 print(f"Score: {score}")
+                print(
+                    f"Best config ({best_score}): {best_config.AVG_HRS} [HRS], {best_config.MIN_GAIN} [MIN_GAIN], {best_config.MIN_DELTA} [MIN_DELTA]")
 
 
 if __name__ == "__main__":
