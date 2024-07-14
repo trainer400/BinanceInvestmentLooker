@@ -52,19 +52,40 @@ def get_server_timestamp(client: Spot):
 
 
 def get_avg_price(client: Spot, coin_name: str, avg_hrs: int, starting_timestamp: int):
-    # Number of seconds from beginning / number of seconds in 5 minutes
-    number_candles = (avg_hrs * 60 * 60) // (5 * 60)
-    data = client.klines(coin_name, "5m", limit=min(number_candles, 1000))
+    # Max number of candles that binance can send in one packet
+    MAX_CANDLES = 1000
 
-    # Sum the average among open and close prices
+    # Number of seconds from beginning / number of seconds in 1 minute
+    number_candles = (avg_hrs * 60 * 60) // 60
+
+    # Starting timestamp to count the average
+    target_timestamp = starting_timestamp - avg_hrs * 60 * 60
+
+    # Iterate with 1m candles requests (to have the most precise estimation) until all the average hours are collected
+    requested_candles = 0
     result = 0.0
-    for candle in data:
-        open = candle[1]
-        close = candle[4]
-        result += (float(open) + float(close)) / 2.0
+    sum_number = 0
+    while requested_candles < number_candles:
+        # Request candles
+        data = client.klines(coin_name, "1m",
+                             endTime=(starting_timestamp - requested_candles * 60) * 1000, limit=min(number_candles - requested_candles, MAX_CANDLES))
+
+        # Sum the average among open and close prices
+        for candle in data:
+            # Sum only if the candle timestamp is greater than the user requested one
+            if (candle[0] / 1000 > target_timestamp):
+                open = candle[1]
+                close = candle[4]
+                result += (float(open) + float(close)) / 2.0
+
+                # Count the number of sums to make the average at the end
+                sum_number += 1
+
+        # Update the requested candles
+        requested_candles += len(data)
 
     # Average the final result
-    result = result / len(data)
+    result = result / sum_number
 
     return truncate(result, 9)
 
