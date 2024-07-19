@@ -1,5 +1,5 @@
 from pathlib import Path
-import csv
+import json
 import os
 
 
@@ -26,30 +26,22 @@ def get_absolute_path(path: str):
 
 
 def read_user_configurations(path: str):
-    # Read the CSV configuration file
+    # Read the Json configuration file
     script_location = Path(__file__).absolute().parent
     file_location = script_location / path
 
-    # Verify the configuration file presence
     if not os.path.exists(file_location):
-        raise Exception("[ERR] The configuration file does not exist")
+        raise Exception("[Err] The configuration file does not exist")
 
+    # Parse json file
     file = file_location.open()
-    reader = csv.DictReader(file)
+    data = json.load(file)
 
-    # Read all the csv rows
-    rows = []
-    for row in reader:
-        rows.append(row)
-
-    # Check the presence of a valid config row
-    if len(rows) < 1:
-        raise Exception("[ERR] No valid configuration")
-
+    # Read the configurations
     configs = []
 
     # Populate the resulting configurations
-    for row in rows:
+    for row in data["CONFIGS"]:
         config = UserConfiguration()
         config.COIN_NAME = row["COIN_NAME"]
         config.CURRENCY_NAME = row["CURRENCY_NAME"]
@@ -63,11 +55,7 @@ def read_user_configurations(path: str):
         config.SLEEP_DAYS_AFTER_LOSS = int(row["SLEEP_DAYS_AFTER_LOSS"])
         config.KEY_FILE_NAME = row["KEY_FILE_NAME"]
         config.LOG_NAME = row["LOG_NAME"]
-        config.TEST_MODE = False if row["TEST_MODE"] == '0' else True
-
-        if config.AVG_HRS >= 150 or config.AVG_HRS <= 0:
-            raise Exception(
-                "[ERR] Invalid AVG HRS time must be of interval (0:150)")
+        config.TEST_MODE = row["TEST_MODE"]
 
         # Add config to the list
         configs.append(config)

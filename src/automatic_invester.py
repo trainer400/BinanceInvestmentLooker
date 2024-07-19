@@ -1,4 +1,4 @@
-from configuration_reader import *
+from json_configuration_reader import *
 from binance_interface import *
 from investment_strategy import *
 import datetime as dt
@@ -95,7 +95,7 @@ def main():
     sys.stderr = new_stdout
 
     # Read the user configuration
-    configs = read_user_configurations("../invester_config.csv")
+    configs = read_user_configurations("../invester_config.json")
 
     # Load the internal states
     states = {}

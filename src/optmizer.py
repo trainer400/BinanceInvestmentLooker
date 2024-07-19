@@ -2,8 +2,9 @@ from binance_interface import *
 from simulator import *
 import decimal
 import copy
+import csv
 
-LOG_FILE = "../execution_logs/PEPE-3M.csv"
+LOG_FILE = "../execution_logs/PEPEUSDT-120.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"

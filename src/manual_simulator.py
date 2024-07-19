@@ -1,11 +1,12 @@
-from configuration_reader import *
+from json_configuration_reader import *
 from investment_strategy import *
 import matplotlib.pyplot as plt
 import datetime as dt
 import time
+import csv
 
 INITIAL_INVESTMENT = 100
-LOG_FILE = "../execution_logs/PEPEUSDT-150.csv"
+LOG_FILE = "../execution_logs/PEPEUSDT-120.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"

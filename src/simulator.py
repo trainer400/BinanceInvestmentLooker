@@ -1,4 +1,3 @@
-from configuration_reader import *
 from investment_strategy import *
 import matplotlib.pyplot as plt
 import datetime as dt

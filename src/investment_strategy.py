@@ -1,5 +1,5 @@
 from logger import *
-from configuration_reader import *
+from json_configuration_reader import *
 from enum import Enum
 
 

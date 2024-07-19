@@ -1,5 +1,5 @@
 from binance_interface import *
-from configuration_reader import *
+from json_configuration_reader import *
 from logger import *
 import datetime as dt
 import time

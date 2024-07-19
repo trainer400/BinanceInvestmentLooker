@@ -1,0 +1,35 @@
+{
+    "CONFIGS":
+    [
+        {
+            "COIN_NAME": "PEPEUSDC",
+            "CURRENCY_NAME": "PEPE",
+            "BASE_CURRENCY_NAME": "USDC",
+            "AVG_HRS": 22,
+            "MIN_GAIN": 3,
+            "BUY_TAX": 0.1,
+            "SELL_TAX": 0.1,
+            "MIN_DELTA": 3.5,
+            "STOP_LOSS": 50,
+            "SLEEP_DAYS_AFTER_LOSS": 0,
+            "KEY_FILE_NAME": "key.json",
+            "LOG_NAME": "PEPE",
+            "TEST_MODE": true
+        },
+        {
+            "COIN_NAME": "ETCUSDC",
+            "CURRENCY_NAME": "ETC",
+            "BASE_CURRENCY_NAME": "USDC",
+            "AVG_HRS": 20,
+            "MIN_GAIN": 3.5,
+            "BUY_TAX": 0.1,
+            "SELL_TAX": 0.1,
+            "MIN_DELTA": 3,
+            "STOP_LOSS": 50,
+            "SLEEP_DAYS_AFTER_LOSS": 30,
+            "KEY_FILE_NAME": "key.json",
+            "LOG_NAME": "ETC",
+            "TEST_MODE": true
+        }
+    ]
+}
