@@ -1,5 +1,6 @@
 from pathlib import Path
 from enum import Enum
+from typing import List
 import json
 import os
 
@@ -33,7 +34,7 @@ def get_absolute_path(path: str):
     return str(file_location)
 
 
-def read_user_configurations(path: str) -> list[UserConfiguration]:
+def read_user_configurations(path: str) -> List[UserConfiguration]:
     # Read the Json configuration file
     script_location = Path(__file__).absolute().parent
     file_location = script_location / path
