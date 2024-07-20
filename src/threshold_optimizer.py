@@ -88,6 +88,7 @@ def main():
 
     # Create user configuration
     config = UserConfiguration()
+    config.ALGORITHM_TYPE = AlgorithmType.THRESHOLD
     config.AVG_HRS = 1
     config.COIN_NAME = COIN_NAME
     config.CURRENCY_NAME = CURRENCY_NAME

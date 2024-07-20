@@ -15,6 +15,9 @@ def load_internal_state(config: UserConfiguration):
     state.last_action = Action.NONE
     state.last_buy_price = 0
     state.last_action_ts = 0
+    state.last_price_ratio = 0
+    state.considered_long_avg = 0
+    state.current_price_ratio = 0
 
     # If the file does not exist, return the default internal state
     if not os.path.exists(file_path):
@@ -128,6 +131,15 @@ def main():
                     client, config, configs, states)
                 state.considered_avg = get_avg_price(
                     client, config.COIN_NAME, config.AVG_HRS, state.timestamp)
+
+                # If needed check also the long average
+                if config.LONG_AVG_HRS != 0:
+                    state.considered_long_avg = get_avg_price(
+                        client, config.COIN_NAME, config.LONG_AVG_HRS, state.timestamp)
+
+                    # Update price ratios
+                    state.last_price_ratio = state.current_price_ratio
+                    state.current_price_ratio = state.considered_avg / state.considered_long_avg
 
                 # Make decision
                 decision = make_decision(state, config)

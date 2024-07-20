@@ -2,6 +2,7 @@
     "CONFIGS":
     [
         {
+            "ALGORITHM_TYPE":"THRESHOLD",
             "COIN_NAME": "PEPEUSDC",
             "CURRENCY_NAME": "PEPE",
             "BASE_CURRENCY_NAME": "USDC",
@@ -17,14 +18,14 @@
             "TEST_MODE": true
         },
         {
-            "COIN_NAME": "ETCUSDC",
+            "ALGORITHM_TYPE":"CROSSOVER",
+            "COIN_NAME": "ETCUSDT",
             "CURRENCY_NAME": "ETC",
-            "BASE_CURRENCY_NAME": "USDC",
+            "BASE_CURRENCY_NAME": "USDT",
             "AVG_HRS": 20,
-            "MIN_GAIN": 3.5,
+            "LONG_AVG_HRS": 50,
             "BUY_TAX": 0.1,
             "SELL_TAX": 0.1,
-            "MIN_DELTA": 3,
             "STOP_LOSS": 50,
             "SLEEP_DAYS_AFTER_LOSS": 30,
             "KEY_FILE_NAME": "key.json",

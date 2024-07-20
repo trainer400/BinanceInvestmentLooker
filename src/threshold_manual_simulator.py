@@ -65,6 +65,7 @@ def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_ti
 def main():
     # Create user configuration
     config = UserConfiguration()
+    config.ALGORITHM_TYPE = AlgorithmType.THRESHOLD
     config.AVG_HRS = AVG_HRS
     config.COIN_NAME = COIN_NAME
     config.CURRENCY_NAME = CURRENCY_NAME
