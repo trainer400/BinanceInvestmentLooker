@@ -31,6 +31,10 @@ def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_ti
 
 
 def simulate(config: UserConfiguration, data_ts, data_price) -> list:
+    # Check configuration
+    if config.AVG_HRS > config.LONG_AVG_HRS and config.LONG_AVG_HRS != 0:
+        print("[ERR] Long average is less than small average")
+        return
 
     simulation_result = []
 
@@ -46,12 +50,26 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
             starting_index = i
             break
 
-    # Compute the initial average
+    # Find the first location in the data which has enough previous samples to compute the long average
+    starting_index_long = 0
+    if config.LONG_AVG_HRS != 0:
+        first_ts = data_ts[0]
+        for i in range(len(data_ts)):
+            if data_ts[i] > first_ts + config.LONG_AVG_HRS * 60 * 60:
+                starting_index_long = i
+                break
+
+    # Compute initial average
     state.considered_avg = compute_avg_price(
-        data_ts, data_price, config.AVG_HRS, data_ts[starting_index])
+        data_ts, data_price, config.AVG_HRS, data_ts[max(starting_index_long, starting_index)])
+
+    # Compute the initial long average
+    if config.LONG_AVG_HRS != 0:
+        state.considered_long_avg = compute_avg_price(
+            data_ts, data_price, config.LONG_AVG_HRS, data_ts[starting_index_long])
 
     # Run the simulator
-    for i in range(starting_index, len(data_ts)):
+    for i in range(max(starting_index, starting_index_long), len(data_ts)):
 
         # Populate the equivalent state
         state.timestamp = data_ts[i]
@@ -61,6 +79,14 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
         # first of the previously considered ones and adding the new one
         state.considered_avg = ((state.considered_avg * starting_index) -
                                 data_price[i - starting_index] + data_price[i]) / starting_index
+
+        # Update long average
+        if config.LONG_AVG_HRS != 0:
+            state.considered_long_avg = ((state.considered_long_avg * starting_index_long) -
+                                         data_price[i - starting_index_long] + data_price[i]) / starting_index_long
+            # Update price ratios
+            state.last_price_ratio = state.current_price_ratio
+            state.current_price_ratio = state.considered_avg / state.considered_long_avg
 
         # Make the strategic decision
         decision = make_decision(state, config)
