@@ -43,8 +43,8 @@ def make_threshold_decision(state: InternalState, config: UserConfiguration):
 def make_crossover_decision(state: InternalState, config: UserConfiguration):
     # The user has crypto in the account
     if state.last_action == Action.BUY:
-        # The little average crosses the bigger average thus sell
-        if state.current_price_ratio <= 1 and state.last_price_ratio > 1:
+        # The little average crosses the bigger average and the price is greater than the buy one thus sell
+        if state.current_price_ratio <= 1 and state.last_price_ratio > 1 and (state.current_price / state.last_buy_price > (1 + (config.BUY_TAX + config.SELL_TAX) / 100)):
             return Action.SELL
         if config.STOP_LOSS != 0 and (1 - state.considered_avg / state.last_buy_price) > (config.STOP_LOSS / 100.0):
             return Action.SELL_LOSS
