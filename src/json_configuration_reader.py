@@ -16,6 +16,7 @@ class UserConfiguration:
     CURRENCY_NAME = ""
     BASE_CURRENCY_NAME = ""
     AVG_HRS = 0
+    SHORT_AVG_HRS = 0
     LONG_AVG_HRS = 0
     MIN_GAIN = 0.0
     BUY_TAX = 0.0
@@ -75,9 +76,11 @@ def read_user_configurations(path: str) -> List[UserConfiguration]:
             config.CURRENCY_NAME = row["CURRENCY_NAME"]
             config.BASE_CURRENCY_NAME = row["BASE_CURRENCY_NAME"]
             config.AVG_HRS = int(row["AVG_HRS"])
+            config.SHORT_AVG_HRS = int(row["SHORT_AVG_HRS"])
             config.LONG_AVG_HRS = int(row["LONG_AVG_HRS"])
             config.BUY_TAX = float(row["BUY_TAX"])
             config.SELL_TAX = float(row["SELL_TAX"])
+            config.MIN_DELTA = float(row["MIN_DELTA"])
             config.STOP_LOSS = float(row["STOP_LOSS"])
             config.SLEEP_DAYS_AFTER_LOSS = int(row["SLEEP_DAYS_AFTER_LOSS"])
             config.KEY_FILE_NAME = row["KEY_FILE_NAME"]

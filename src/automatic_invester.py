@@ -17,6 +17,7 @@ def load_internal_state(config: UserConfiguration):
     state.last_action_ts = 0
     state.last_price_ratio = 0
     state.considered_long_avg = 0
+    state.considered_short_avg = 0
     state.current_price_ratio = 0
 
     # If the file does not exist, return the default internal state
@@ -132,14 +133,16 @@ def main():
                 state.considered_avg = get_avg_price(
                     client, config.COIN_NAME, config.AVG_HRS, state.timestamp)
 
-                # If needed check also the long average
-                if config.LONG_AVG_HRS != 0:
+                # If needed check also the long/short average
+                if config.LONG_AVG_HRS != 0 and config.SHORT_AVG_HRS != 0:
                     state.considered_long_avg = get_avg_price(
                         client, config.COIN_NAME, config.LONG_AVG_HRS, state.timestamp)
+                    state.considered_short_avg = get_avg_price(
+                        client, config.COIN_NAME, config.SHORT_AVG_HRS, state.timestamp)
 
                     # Update price ratios
                     state.last_price_ratio = state.current_price_ratio
-                    state.current_price_ratio = state.considered_avg / state.considered_long_avg
+                    state.current_price_ratio = state.considered_short_avg / state.considered_long_avg
 
                 # Make decision
                 decision = make_decision(state, config)
@@ -203,7 +206,7 @@ def main():
                     f"[{state.timestamp}][{dt.datetime.fromtimestamp(state.timestamp)}][ERR] Caught unhandled exception during the process: {str(e)}")
 
         # Sleep until next update
-        time.sleep(10)
+        time.sleep(20)
 
 
 if __name__ == "__main__":

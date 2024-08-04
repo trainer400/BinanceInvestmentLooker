@@ -32,7 +32,7 @@ def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_ti
 
 def simulate(config: UserConfiguration, data_ts, data_price) -> list:
     # Check configuration
-    if config.AVG_HRS > config.LONG_AVG_HRS and config.LONG_AVG_HRS != 0:
+    if config.SHORT_AVG_HRS > config.LONG_AVG_HRS and config.LONG_AVG_HRS != 0 and config.SHORT_AVG_HRS:
         print("[ERR] Long average is less than small average")
         return
 
@@ -51,6 +51,15 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
             break
 
     # Find the first location in the data which has enough previous samples to compute the long average
+    starting_index_short = 0
+    if config.SHORT_AVG_HRS != 0:
+        first_ts = data_ts[0]
+        for i in range(len(data_ts)):
+            if data_ts[i] > first_ts + config.SHORT_AVG_HRS * 60 * 60:
+                starting_index_short = i
+                break
+
+    # Find the first location in the data which has enough previous samples to compute the long average
     starting_index_long = 0
     if config.LONG_AVG_HRS != 0:
         first_ts = data_ts[0]
@@ -59,17 +68,26 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
                 starting_index_long = i
                 break
 
+    # Compute the highest index from which the simulation shall start
+    absolute_starting_index = max(
+        starting_index, starting_index_long, starting_index_short)
+
     # Compute initial average
     state.considered_avg = compute_avg_price(
-        data_ts, data_price, config.AVG_HRS, data_ts[max(starting_index_long, starting_index)])
+        data_ts, data_price, config.AVG_HRS, data_ts[absolute_starting_index])
+
+    # Compute the initial short average
+    if config.SHORT_AVG_HRS != 0:
+        state.considered_short_avg = compute_avg_price(
+            data_ts, data_price, config.SHORT_AVG_HRS, data_ts[absolute_starting_index])
 
     # Compute the initial long average
     if config.LONG_AVG_HRS != 0:
         state.considered_long_avg = compute_avg_price(
-            data_ts, data_price, config.LONG_AVG_HRS, data_ts[starting_index_long])
+            data_ts, data_price, config.LONG_AVG_HRS, data_ts[absolute_starting_index])
 
     # Run the simulator
-    for i in range(max(starting_index, starting_index_long), len(data_ts)):
+    for i in range(absolute_starting_index, len(data_ts)):
 
         # Populate the equivalent state
         state.timestamp = data_ts[i]
@@ -80,13 +98,16 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
         state.considered_avg = ((state.considered_avg * starting_index) -
                                 data_price[i - starting_index] + data_price[i]) / starting_index
 
-        # Update long average
-        if config.LONG_AVG_HRS != 0:
+        # Update long and short average
+        if config.LONG_AVG_HRS != 0 and config.SHORT_AVG_HRS != 0:
             state.considered_long_avg = ((state.considered_long_avg * starting_index_long) -
                                          data_price[i - starting_index_long] + data_price[i]) / starting_index_long
+
+            state.considered_short_avg = ((state.considered_short_avg * starting_index_short) -
+                                          data_price[i - starting_index_short] + data_price[i]) / starting_index_short
             # Update price ratios
             state.last_price_ratio = state.current_price_ratio
-            state.current_price_ratio = state.considered_avg / state.considered_long_avg
+            state.current_price_ratio = state.considered_short_avg / state.considered_long_avg
 
         # Make the strategic decision
         decision = make_decision(state, config)

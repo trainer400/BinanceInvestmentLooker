@@ -6,25 +6,27 @@ import multiprocessing
 import csv
 
 
-LOG_FILE = "../execution_logs/PEPEUSDT-120.csv"
+LOG_FILE = "../execution_logs/PEPEUSDT-150.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"
+AVG_HRS = 1
 BUY_TAX = 0.1
 SELL_TAX = 0.1
-STOP_LOSS = 50
-SLEEP_DAYS_AFTER_LOSS = 30
+MIN_DELTA = 3.5
+STOP_LOSS = 10
+SLEEP_DAYS_AFTER_LOSS = 0
 
 # Create user configuration
 config = UserConfiguration()
 config.ALGORITHM_TYPE = AlgorithmType.CROSSOVER
-config.AVG_HRS = 1
-config.LONG_AVG_HRS = 2
+config.AVG_HRS = AVG_HRS
 config.COIN_NAME = COIN_NAME
 config.CURRENCY_NAME = CURRENCY_NAME
 config.BASE_CURRENCY_NAME = BASE_CURRENCY_NAME
 config.BUY_TAX = BUY_TAX
 config.SELL_TAX = SELL_TAX
+config.MIN_DELTA = MIN_DELTA
 config.STOP_LOSS = STOP_LOSS
 config.SLEEP_DAYS_AFTER_LOSS = SLEEP_DAYS_AFTER_LOSS
 
@@ -92,36 +94,37 @@ def evaluate_simulation(config: UserConfiguration, simulation_data: list):
 
 
 def objective(params):
-    avg_hrs, long_avg_hrs = params
+    avg_short_hrs, long_avg_hrs = params
 
     # Invalid cases are rejected
-    if avg_hrs >= long_avg_hrs or avg_hrs == 0 or long_avg_hrs == 0:
+    if avg_short_hrs >= long_avg_hrs or avg_short_hrs == 0 or long_avg_hrs == 0:
         return (0, 0, 0)
 
-    config.AVG_HRS = float(avg_hrs)
+    config.SHORT_AVG_HRS = float(avg_short_hrs)
     config.LONG_AVG_HRS = float(long_avg_hrs)
 
     simulation_data = simulate(config, data_ts, data_price)
     score = evaluate_simulation(config, simulation_data)
 
-    return (avg_hrs, long_avg_hrs, score)
+    return (avg_short_hrs, long_avg_hrs, score)
 
 
 def main():
-    AVG_HRS_MIN = 0.1
-    AVG_HRS_MAX = 30
-    AVG_HRS_STEP = 1
+    SHORT_AVG_HRS_MIN = 1
+    SHORT_AVG_HRS_MAX = 400
+    SHORT_AVG_HRS_STEP = 5
 
-    LONG_AVG_HRS_MIN = 0.1
-    LONG_AVG_HRS_MAX = 50
-    LONG_AVG_HRS_STEP = 1
+    LONG_AVG_HRS_MIN = 1
+    LONG_AVG_HRS_MAX = 400
+    LONG_AVG_HRS_STEP = 5
 
-    avg_hrs = list[float](drange(AVG_HRS_MIN, AVG_HRS_MAX, str(AVG_HRS_STEP)))
-    avg_long_hrs = list[float](
-        drange(LONG_AVG_HRS_MIN, LONG_AVG_HRS_MAX, str(LONG_AVG_HRS_STEP)))
+    avg_short_hrs = list[int](
+        range(SHORT_AVG_HRS_MIN, SHORT_AVG_HRS_MAX, SHORT_AVG_HRS_STEP))
+    avg_long_hrs = list[int](
+        range(LONG_AVG_HRS_MIN, LONG_AVG_HRS_MAX, LONG_AVG_HRS_STEP))
 
     # Create the set of combinations
-    param_combinations = list(itertools.product(avg_hrs, avg_long_hrs))
+    param_combinations = list(itertools.product(avg_short_hrs, avg_long_hrs))
 
     # In parallel look for the best result
     with multiprocessing.Pool() as pool:
@@ -134,7 +137,7 @@ def main():
             best = i
 
     print(
-        f"Best config ({results[best][2]}): {results[best][0]} [HRS], {results[best][1]} [LONG_HRS]")
+        f"Best config ({results[best][2]}): {results[best][0]} [SHORT_HRS], {results[best][1]} [LONG_HRS]")
 
 
 if __name__ == "__main__":

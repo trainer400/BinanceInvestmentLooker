@@ -18,6 +18,7 @@ class InternalState(LoggableObject):
     current_price_ratio = 0
     last_price_ratio = 0
     considered_avg = 0
+    considered_short_avg = 0
     considered_long_avg = 0
     last_action = Action.NONE
     last_action_ts = 0
@@ -49,10 +50,9 @@ def make_crossover_decision(state: InternalState, config: UserConfiguration):
         if config.STOP_LOSS != 0 and (1 - state.considered_avg / state.last_buy_price) > (config.STOP_LOSS / 100.0):
             return Action.SELL_LOSS
     elif (state.last_action != Action.SELL_LOSS or state.timestamp - state.last_action_ts > config.SLEEP_DAYS_AFTER_LOSS * 24 * 60 * 60) and \
+            state.current_price <= (state.considered_avg - state.considered_avg * ((config.BUY_TAX + config.SELL_TAX + config.MIN_DELTA) / 100.0)) and \
             state.current_base_coin_availability != 0:
-        # The little average crosses the bigger average thus buy
-        if state.current_price_ratio >= 1 and state.last_price_ratio < 1 and state.last_price_ratio != 0:
-            return Action.BUY
+        return Action.BUY
     return Action.NONE
 
 
