@@ -14,7 +14,7 @@ AVG_HRS = 1
 BUY_TAX = 0.1
 SELL_TAX = 0.1
 MIN_DELTA = 3.5
-STOP_LOSS = 10
+STOP_LOSS = 25
 SLEEP_DAYS_AFTER_LOSS = 0
 
 # Create user configuration
@@ -67,30 +67,16 @@ def read_log_file(path: str) -> tuple[list, list]:
 (data_ts, data_unix, data_price) = read_log_file(LOG_FILE)
 
 
-def evaluate_simulation(config: UserConfiguration, simulation_data: list):
-    # Use 100% of initial investment
-    initial_investment = 100
-
+def evaluate_simulation(config: UserConfiguration, simulation_data: list[InternalState]):
     # Evaluate the final gain
-    base_coin = initial_investment
-    active_coin = 0
-    for data in simulation_data:
-        if (data.action == Action.BUY):
-            active_coin = (base_coin - (config.BUY_TAX / 100.0)
-                           * base_coin) / data.price
-            base_coin = 0
-
-        elif (data.action == Action.SELL or data.action == Action.SELL_LOSS):
-            value = active_coin * data.price
-            base_coin = value - (config.SELL_TAX / 100.0) * value
-            active_coin = 0
+    final_state = simulation_data[len(simulation_data) - 1]
 
     # In case at the end there is only a sell action, sell the remaining amount
-    if (base_coin == 0):
-        base_coin = active_coin * \
-            simulation_data[len(simulation_data) - 1].price
+    if (final_state.current_base_coin_availability == 0):
+        final_state.current_base_coin_availability = final_state.current_coin_availability * \
+            final_state.current_price
 
-    return base_coin
+    return final_state.current_base_coin_availability
 
 
 def objective(params):
@@ -111,12 +97,12 @@ def objective(params):
 
 def main():
     SHORT_AVG_HRS_MIN = 1
-    SHORT_AVG_HRS_MAX = 400
-    SHORT_AVG_HRS_STEP = 5
+    SHORT_AVG_HRS_MAX = 50
+    SHORT_AVG_HRS_STEP = 1
 
     LONG_AVG_HRS_MIN = 1
-    LONG_AVG_HRS_MAX = 400
-    LONG_AVG_HRS_STEP = 5
+    LONG_AVG_HRS_MAX = 50
+    LONG_AVG_HRS_STEP = 1
 
     avg_short_hrs = list[int](
         range(SHORT_AVG_HRS_MIN, SHORT_AVG_HRS_MAX, SHORT_AVG_HRS_STEP))
