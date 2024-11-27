@@ -1,3 +1,4 @@
+import copy
 from investment_strategy import *
 import matplotlib.pyplot as plt
 import datetime as dt
@@ -6,12 +7,6 @@ import time
 # Not important for the actual simulation, only important for the backend algorithm who MAY decide
 # for specific actions based on how much it is farming money
 INITIAL_INVESTMENT = 100
-
-
-class SimulationData:
-    timestamp = 0
-    action = Action.NONE
-    price = 0.0
 
 
 def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_timestamp: int):
@@ -30,7 +25,7 @@ def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_ti
     return float(result) / counter
 
 
-def simulate(config: UserConfiguration, data_ts, data_price) -> list:
+def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalState]:
     # Check configuration
     if config.SHORT_AVG_HRS > config.LONG_AVG_HRS and config.LONG_AVG_HRS != 0 and config.SHORT_AVG_HRS:
         print("[ERR] Long average is less than small average")
@@ -124,13 +119,6 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
             state.current_base_coin_availability = 0
             state.last_action_ts = state.timestamp
 
-            # Register the simulation step
-            data_point = SimulationData()
-            data_point.timestamp = state.timestamp
-            data_point.action = Action.BUY
-            data_point.price = state.current_price
-            simulation_result.append(data_point)
-
         elif decision == Action.SELL or decision == Action.SELL_LOSS:
             investment = state.current_coin_availability
             state.last_action = decision
@@ -142,11 +130,7 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list:
             state.current_coin_availability = 0
             state.last_action_ts = state.timestamp
 
-            # Register the simulation step
-            data_point = SimulationData()
-            data_point.timestamp = state.timestamp
-            data_point.action = Action.SELL
-            data_point.price = state.current_price
-            simulation_result.append(data_point)
+        # Register the simulation step
+        simulation_result.append(copy.copy(state))
 
     return simulation_result
