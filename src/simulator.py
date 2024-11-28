@@ -31,8 +31,6 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalSta
         print("[ERR] Long average is less than small average")
         return
 
-    simulation_result = []
-
     # Create an internal state to use during the simulation
     state = InternalState()
     state.current_base_coin_availability = INITIAL_INVESTMENT
@@ -80,6 +78,9 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalSta
     if config.LONG_AVG_HRS != 0:
         state.considered_long_avg = compute_avg_price(
             data_ts, data_price, config.LONG_AVG_HRS, data_ts[absolute_starting_index])
+
+    simulation_result = [InternalState() for i in range(
+        len(data_ts) - absolute_starting_index)]
 
     # Run the simulator
     for i in range(absolute_starting_index, len(data_ts)):
@@ -131,6 +132,18 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalSta
             state.last_action_ts = state.timestamp
 
         # Register the simulation step
-        simulation_result.append(copy.copy(state))
+        index = i - absolute_starting_index
+        simulation_result[index].timestamp = state.timestamp
+        simulation_result[index].current_price = state.current_price
+        simulation_result[index].current_coin_availability = state.current_coin_availability
+        simulation_result[index].current_base_coin_availability = state.current_base_coin_availability
+        simulation_result[index].current_price_ratio = state.current_price_ratio
+        simulation_result[index].last_price_ratio = state.last_price_ratio
+        simulation_result[index].considered_avg = state.considered_avg
+        simulation_result[index].considered_short_avg = state.considered_short_avg
+        simulation_result[index].considered_long_avg = state.considered_long_avg
+        simulation_result[index].last_action = state.last_action
+        simulation_result[index].last_action_ts = state.last_action_ts
+        simulation_result[index].last_buy_price = state.last_buy_price
 
     return simulation_result

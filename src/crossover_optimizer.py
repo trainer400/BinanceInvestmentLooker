@@ -97,11 +97,11 @@ def objective(params):
 
 def main():
     SHORT_AVG_HRS_MIN = 1
-    SHORT_AVG_HRS_MAX = 50
+    SHORT_AVG_HRS_MAX = 10
     SHORT_AVG_HRS_STEP = 1
 
     LONG_AVG_HRS_MIN = 1
-    LONG_AVG_HRS_MAX = 50
+    LONG_AVG_HRS_MAX = 10
     LONG_AVG_HRS_STEP = 1
 
     avg_short_hrs = list[int](

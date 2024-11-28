@@ -1,22 +1,22 @@
 from json_configuration_reader import *
 from investment_strategy import *
+from simulator import *
 import matplotlib.pyplot as plt
 import datetime as dt
-import time
 import csv
 
 INITIAL_INVESTMENT = 100
-LOG_FILE = "../execution_logs/PEPEUSDT-120.csv"
+LOG_FILE = "../execution_logs/PEPEUSDT-150.csv"
 COIN_NAME = "PEPEUSDT"
 CURRENCY_NAME = "PEPE"
 BASE_CURRENCY_NAME = "USDT"
-AVG_HRS = 1
-MIN_GAIN = 3
+AVG_HRS = 4
+MIN_GAIN = 1.3
 BUY_TAX = 0.1
 SELL_TAX = 0.1
-MIN_DELTA = 3.5
-STOP_LOSS = 50
-SLEEP_DAYS_AFTER_LOSS = 30
+MIN_DELTA = 2.9
+STOP_LOSS = 25
+SLEEP_DAYS_AFTER_LOSS = 5
 MAX_INVESTMENT = 10000
 
 
@@ -46,22 +46,6 @@ def read_log_file(path: str) -> tuple[list, list]:
     return (data_ts, data_unix, data_price)
 
 
-def compute_avg_price(data_ts: list, data_price: list, avg_hrs: int, starting_timestamp: int):
-    # Delta in seconds that the requested average impacts on the timestamp
-    delta_seconds = avg_hrs * 60 * 60
-
-    # Sum all the prices that correspond to a timestamp that is inside the considered average window
-    result = 0
-    counter = 0
-    for i in range(len(data_ts)):
-        if data_ts[i] < starting_timestamp and data_ts[i] > starting_timestamp - delta_seconds:
-            result += data_price[i]
-            counter += 1
-        elif data_ts[i] > starting_timestamp:
-            break
-    return float(result) / counter
-
-
 def main():
     # Create user configuration
     config = UserConfiguration()
@@ -82,93 +66,46 @@ def main():
     state.current_base_coin_availability = INITIAL_INVESTMENT
 
     # Gather the data
-    print("[INFO] Gathering data")
     (data_ts, data_date, data_price) = read_log_file(LOG_FILE)
 
-    # Plot the data
+    # Create plots
     fig, ax = plt.subplots()
-    ax.plot(data_date, data_price)
 
-    # Find the first location in the data which has enough previous samples to compute the average
-    starting_index = 0
-    first_ts = data_ts[0]
-    for i in range(len(data_ts)):
-        if data_ts[i] > first_ts + AVG_HRS * 60 * 60:
-            starting_index = i
-            break
+    # Simulate the event with the simulator class
+    simulation_result = simulate(config, data_ts, data_price)
 
-    # Compute the initial average
-    state.considered_avg = compute_avg_price(
-        data_ts, data_price, AVG_HRS, data_ts[starting_index])
+    # Retrieve the simulation objects
+    avg_time = [dt.datetime.fromtimestamp(
+        sim_step.timestamp) for sim_step in simulation_result]
+    avg_price = [sim_step.considered_avg for sim_step in simulation_result]
 
-    # Accumulate average data
-    avg_price = []
-    avg_time = []
-    avg_thr = []
-
-    # Sell thr
-    sell_thr = []
-
-    # Run the simulator
-    for i in range(starting_index, len(data_ts)):
-        # print(
-        #     f"[INFO] Simulation progress: {float(100.0 * (i - starting_index) / (len(data_ts) - starting_index)):.2f}%")
-
-        # Populate the equivalent state
-        state.timestamp = data_ts[i]
-        state.current_price = data_price[i]
-
-        # Propagate the average by multiplying with the number of considered values, subtracting the
-        # first of the previously considered ones and adding the new one
-        state.considered_avg = ((state.considered_avg * starting_index) -
-                                data_price[i - starting_index] + data_price[i]) / starting_index
-
-        # Populate the average samples
-        avg_price.append(state.considered_avg)
-        avg_time.append(dt.datetime.fromtimestamp(state.timestamp))
-        avg_thr.append(state.considered_avg *
-                       (1 - (MIN_DELTA + BUY_TAX + SELL_TAX) / 100.0))
-
-        sell_thr.append(state.last_buy_price * (1 + MIN_GAIN / 100.0))
-
-        # Make the strategic decision
-        decision = make_decision(state, config)
-
-        # Update the internal state
-        if decision == Action.BUY:
-            investment = min(
-                state.current_base_coin_availability, MAX_INVESTMENT)
-            state.current_base_coin_availability -= investment
-
-            state.last_buy_price = state.current_price
-            state.current_coin_availability = (investment -
-                                               (BUY_TAX / 100.0) * investment) / state.current_price
-            state.last_action = decision
-            state.last_action_ts = state.timestamp
-            ax.axvline(data_date[i], color="b", label="BUY")
+    # Evaluate all the actions
+    prev_action = Action.NONE
+    for sim_step in simulation_result:
+        date_timestamp = dt.datetime.fromtimestamp(sim_step.timestamp)
+        # Buy action
+        if sim_step.last_action != prev_action and sim_step.last_action == Action.BUY:
+            ax.axvline(date_timestamp, color="b", label="BUY")
 
             # Report the buy action
             print(
-                f"[{data_date[i]}]BUY action {config.BASE_CURRENCY_NAME}: {state.current_base_coin_availability:.2f} {config.CURRENCY_NAME}: {state.current_coin_availability:.8f}")
-
-        elif decision == Action.SELL or decision == Action.SELL_LOSS:
-            investment = state.current_coin_availability
-            state.last_action = decision
-            state.current_base_coin_availability += state.current_coin_availability * state.current_price - \
-                (config.SELL_TAX / 100.0) * \
-                state.current_coin_availability * state.current_price
-            state.current_coin_availability = 0
-            state.last_action_ts = state.timestamp
-            ax.axvline(data_date[i], color="g", label="SELL")
+                f"[{date_timestamp}]BUY \t {config.BASE_CURRENCY_NAME}:\t" +
+                f"{sim_step.current_base_coin_availability: .2f}\t{config.CURRENCY_NAME}:\t{sim_step.current_coin_availability:.8f}")
+        # Sell action
+        elif sim_step.last_action != prev_action and (sim_step.last_action == Action.SELL or sim_step.last_action == Action.SELL_LOSS):
+            ax.axvline(date_timestamp, color="g", label="SELL")
 
             # Report the sell action
             print(
-                f"[{data_date[i]}]SELL action {config.BASE_CURRENCY_NAME}: {state.current_base_coin_availability:.2f} {config.CURRENCY_NAME}: {investment:.8f}")
+                f"[{date_timestamp}]SELL \t {config.BASE_CURRENCY_NAME}:\t" +
+                f"{sim_step.current_base_coin_availability:.2f}\t{config.CURRENCY_NAME}:\t{sim_step.current_coin_availability:.8f}")
+
+        # Update the previous action
+        prev_action = sim_step.last_action
 
     # Plot also the average considered price
+    ax.plot(data_date, data_price)
     ax.plot(avg_time, avg_price, color="yellow")
-    ax.plot(avg_time, avg_thr, color="red")
-    ax.plot(avg_time, sell_thr, color="green")
     plt.show()
 
 
