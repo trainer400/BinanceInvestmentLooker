@@ -16,10 +16,12 @@ class InternalState(LoggableObject):
     current_coin_availability = 0
     current_base_coin_availability = 0
     current_price_ratio = 0
-    last_price_ratio = 0
+    current_delta = 0
     considered_avg = 0
     considered_short_avg = 0
     considered_long_avg = 0
+    last_delta = 0
+    last_price_ratio = 0
     last_action = Action.NONE
     last_action_ts = 0
     last_buy_price = 0
@@ -56,11 +58,29 @@ def make_crossover_decision(state: InternalState, config: UserConfiguration):
     return Action.NONE
 
 
+def make_derivative_decision(state: InternalState, config: UserConfiguration):
+    # The user has crypto in its account
+    if state.last_action == Action.BUY:
+        # Check if the derivative and its second derivative are negative (decreasing trend)
+        if state.current_delta < 0 and state.current_delta - state.last_delta < 0:
+            return Action.SELL
+        if config.STOP_LOSS != 0 and (1 - state.considered_avg / state.last_buy_price) > (config.STOP_LOSS / 100.0):
+            return Action.SELL_LOSS
+    elif (state.last_action != Action.SELL_LOSS or state.timestamp - state.last_action_ts > config.SLEEP_DAYS_AFTER_LOSS * 24 * 60 * 60) and \
+            state.current_base_coin_availability != 0 and \
+            state.current_delta > 0 and state.current_delta - state.last_delta > 0:
+        return Action.BUY
+
+    return Action.NONE
+
+
 def make_decision(state: InternalState, config: UserConfiguration):
     # Select the decision method depending on the algorithm type
     if config.ALGORITHM_TYPE == AlgorithmType.THRESHOLD:
         return make_threshold_decision(state, config)
     elif config.ALGORITHM_TYPE == AlgorithmType.CROSSOVER:
         return make_crossover_decision(state, config)
+    elif config.ALGORITHM_TYPE == AlgorithmType.DERIVATIVE:
+        return make_derivative_decision(state, config)
 
     return Action.NONE

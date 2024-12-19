@@ -8,6 +8,7 @@ import os
 class AlgorithmType(Enum):
     THRESHOLD = "THRESHOLD"
     CROSSOVER = "CROSSOVER"
+    DERIVATIVE = "DERIVATIVE"
 
 
 class UserConfiguration:
@@ -81,6 +82,20 @@ def read_user_configurations(path: str) -> List[UserConfiguration]:
             config.BUY_TAX = float(row["BUY_TAX"])
             config.SELL_TAX = float(row["SELL_TAX"])
             config.MIN_DELTA = float(row["MIN_DELTA"])
+            config.STOP_LOSS = float(row["STOP_LOSS"])
+            config.SLEEP_DAYS_AFTER_LOSS = int(row["SLEEP_DAYS_AFTER_LOSS"])
+            config.KEY_FILE_NAME = row["KEY_FILE_NAME"]
+            config.LOG_NAME = row["LOG_NAME"]
+            config.TEST_MODE = row["TEST_MODE"]
+        elif str(row["ALGORITHM_TYPE"]).lower() == AlgorithmType.DERIVATIVE.value.lower():
+            config = UserConfiguration()
+            config.ALGORITHM_TYPE = AlgorithmType.DERIVATIVE
+            config.COIN_NAME = row["COIN_NAME"]
+            config.CURRENCY_NAME = row["CURRENCY_NAME"]
+            config.BASE_CURRENCY_NAME = row["BASE_CURRENCY_NAME"]
+            config.AVG_HRS = int(row["AVG_HRS"])
+            config.BUY_TAX = float(row["BUY_TAX"])
+            config.SELL_TAX = float(row["SELL_TAX"])
             config.STOP_LOSS = float(row["STOP_LOSS"])
             config.SLEEP_DAYS_AFTER_LOSS = int(row["SLEEP_DAYS_AFTER_LOSS"])
             config.KEY_FILE_NAME = row["KEY_FILE_NAME"]

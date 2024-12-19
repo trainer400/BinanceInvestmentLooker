@@ -91,8 +91,10 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalSta
 
         # Propagate the average by multiplying with the number of considered values, subtracting the
         # first of the previously considered ones and adding the new one
-        state.considered_avg = ((state.considered_avg * starting_index) -
-                                data_price[i - starting_index] + data_price[i]) / starting_index
+        avg = ((state.considered_avg * starting_index) -
+               data_price[i - starting_index] + data_price[i]) / starting_index
+        state.current_delta = avg - state.considered_avg
+        state.considered_avg = avg
 
         # Update long and short average
         if config.LONG_AVG_HRS != 0 and config.SHORT_AVG_HRS != 0:
@@ -145,5 +147,10 @@ def simulate(config: UserConfiguration, data_ts, data_price) -> list[InternalSta
         simulation_result[index].last_action = state.last_action
         simulation_result[index].last_action_ts = state.last_action_ts
         simulation_result[index].last_buy_price = state.last_buy_price
+        simulation_result[index].current_delta = state.current_delta
+        simulation_result[index].last_delta = state.last_delta
+
+        # Update the last derivative
+        state.last_delta = state.current_delta
 
     return simulation_result
